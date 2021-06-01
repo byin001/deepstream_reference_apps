@@ -236,9 +236,9 @@ delete_sources (gpointer data)
   g_mutex_unlock (&eos_lock);
 
   if (g_num_sources == 0) {
-    g_main_loop_quit (loop);
-    g_print ("All sources Stopped quitting\n");
-    return FALSE;
+//    g_main_loop_quit (loop);
+//    g_print ("All sources Stopped quitting\n");
+//    return FALSE;
   }
 
   do {
@@ -249,9 +249,9 @@ delete_sources (gpointer data)
   stop_release_source (source_id);
 
   if (g_num_sources == 0) {
-    g_main_loop_quit (loop);
-    g_print ("All sources Stopped quitting\n");
-    return FALSE;
+//    g_main_loop_quit (loop);
+//    g_print ("All sources Stopped quitting\n");
+//    return FALSE;
   }
 
   return TRUE;
@@ -310,8 +310,8 @@ add_sources (gpointer data)
     /* We have reached MAX_NUM_SOURCES to be added, no stop calling this function
      * and enable calling delete sources
      */
-    g_timeout_add_seconds (10, delete_sources, (gpointer) g_source_bin_list);
-    return FALSE;
+//    g_timeout_add_seconds (10, delete_sources, (gpointer) g_source_bin_list);
+//    return FALSE;
   }
 
   return TRUE;
@@ -641,7 +641,22 @@ main (int argc, char *argv[])
 
   /* Wait till pipeline encounters an error or EOS */
   g_print ("Running...\n");
-  g_timeout_add_seconds (10, add_sources, (gpointer) g_source_bin_list);
+  // g_timeout_add_seconds (10, add_sources, (gpointer) g_source_bin_list);
+  sleep(10);
+  unsigned long long round_count = 0;
+  g_print("Starting refresh loop...");
+  while(true) {
+    while (g_num_sources < MAX_NUM_SOURCES) {
+      add_sources((gpointer)g_source_bin_list);
+      sleep(1);
+    }
+    sleep(1);
+    while (g_num_sources >= 1) {
+      delete_sources((gpointer)g_source_bin_list);
+      sleep(1);
+    }
+    g_print("\n######## Refresh count:[%llu] ####\n\n", ++round_count);
+  }
   g_main_loop_run (loop);
 
   /* Out of the main loop, clean up nicely */
