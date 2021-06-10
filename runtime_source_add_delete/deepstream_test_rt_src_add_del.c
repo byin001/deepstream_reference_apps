@@ -458,6 +458,27 @@ done:
   return ret;
 }
 
+void sleep_print(int interval_sec) {
+  g_print("sleep [%d] sec ...\n", interval_sec);
+  sleep(interval_sec);
+}
+
+void add_sources_test_byin(int interval_sec) {
+  g_print("\n#### Add sources ...\n\n");
+  while (g_num_sources < MAX_NUM_SOURCES) {
+    add_sources((gpointer)g_source_bin_list);
+    sleep_print(interval_sec);
+  }
+}
+
+void del_sources_test_byin(int interval_sec) {
+  g_print("\n#### Del sources ...\n\n");
+  while (g_num_sources >= 1) {
+    delete_sources((gpointer)g_source_bin_list);
+    sleep_print(interval_sec);
+  }
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -471,11 +492,14 @@ main (int argc, char *argv[])
 #endif
 
   /* Check input arguments */
-  if (argc != 2) {
-    g_printerr ("Usage: %s <uri1> \n", argv[0]);
+  if (argc != 3) {
+    g_printerr ("Usage: %s <uri1> <interval-sec>\n", argv[0]);
     return -1;
   }
   num_sources = argc - 1;
+  num_sources--;// added the third arg, so subtract one more.
+  int interval_sec = atoi(argv[2]);
+  g_print("runtime add delete interval set to [%d] sec\n", interval_sec);
 
   /* Standard GStreamer initialization */
   gst_init (&argc, &argv);
@@ -640,23 +664,20 @@ main (int argc, char *argv[])
   //GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline), GST_DEBUG_GRAPH_SHOW_ALL, "ds-app-playing");
 
   /* Wait till pipeline encounters an error or EOS */
-  g_print ("Running...\n");
+  g_print ("First set pipeline to Playing, then add source streams...\n");
   // g_timeout_add_seconds (10, add_sources, (gpointer) g_source_bin_list);
-  sleep(10);
+  sleep_print(5);
   unsigned long long round_count = 0;
-  g_print("Starting refresh loop...");
-  while(true) {
-    while (g_num_sources < MAX_NUM_SOURCES) {
-      add_sources((gpointer)g_source_bin_list);
-      sleep(1);
-    }
-    sleep(1);
-    while (g_num_sources >= 1) {
-      delete_sources((gpointer)g_source_bin_list);
-      sleep(1);
-    }
+  g_print("Starting refresh loop...\n");
+  unsigned long long round_limit = 1;
+  while(round_count < round_limit) {
+    add_sources_test_byin(interval_sec);
+    sleep_print(1);
+    del_sources_test_byin(interval_sec);
     g_print("\n######## Refresh count:[%llu] ####\n\n", ++round_count);
   }
+  add_sources_test_byin(interval_sec);
+  g_print("\n#### Normal run...\n\n");
   g_main_loop_run (loop);
 
   /* Out of the main loop, clean up nicely */

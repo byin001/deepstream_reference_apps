@@ -34,7 +34,7 @@ PKGS:= gstreamer-1.0
 
 OBJS:= $(SRCS:.c=.o)
 
-CFLAGS+= -I$(DS_SDK_ROOT)/sources/includes
+CFLAGS+= -g -I$(DS_SDK_ROOT)/sources/includes
 
 CFLAGS+= `pkg-config --cflags $(PKGS)`
 
