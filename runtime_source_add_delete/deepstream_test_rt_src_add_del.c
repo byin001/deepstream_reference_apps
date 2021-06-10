@@ -310,7 +310,7 @@ add_sources (gpointer data)
     /* We have reached MAX_NUM_SOURCES to be added, no stop calling this function
      * and enable calling delete sources
      */
-    g_timeout_add_seconds (10, delete_sources, (gpointer) g_source_bin_list);
+    // g_timeout_add_seconds (10, delete_sources, (gpointer) g_source_bin_list);
     return FALSE;
   }
 
@@ -471,11 +471,18 @@ main (int argc, char *argv[])
 #endif
 
   /* Check input arguments */
-  if (argc != 2) {
-    g_printerr ("Usage: %s <uri1> \n", argv[0]);
+  if (argc != 3) {
+    g_printerr ("Usage: %s <uri1> <interval-sec>\n", argv[0]);
     return -1;
   }
   num_sources = argc - 1;
+  num_sources--;//added one more CLI arg, so need to subtract it
+  int interval_sec = atoi(argv[2]);
+  if (interval_sec <= 0) {
+    g_print("\n\n#### Disable runtime add \n\n");
+  } else {
+    g_print("\n\n#### Enable runtime add with interval_sec [%d]\n\n", interval_sec);
+  }
 
   /* Standard GStreamer initialization */
   gst_init (&argc, &argv);
@@ -637,11 +644,15 @@ main (int argc, char *argv[])
     g_printerr ("Failed to set pipeline to playing. Exiting.\n");
     return -1;
   }
+  g_print("\n\n#### Pipeline set to PLAYING\n\n");
   //GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline), GST_DEBUG_GRAPH_SHOW_ALL, "ds-app-playing");
 
   /* Wait till pipeline encounters an error or EOS */
   g_print ("Running...\n");
-  g_timeout_add_seconds (10, add_sources, (gpointer) g_source_bin_list);
+  if (interval_sec > 0) {
+    g_print("\n\n Starting runtime source add with leading interval [%d] sec... \n\n", interval_sec);
+    g_timeout_add_seconds (interval_sec, add_sources, (gpointer) g_source_bin_list);
+  }
   g_main_loop_run (loop);
 
   /* Out of the main loop, clean up nicely */
