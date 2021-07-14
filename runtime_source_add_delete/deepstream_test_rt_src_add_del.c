@@ -58,6 +58,8 @@ GMainLoop *loop = NULL;
 #define CONFIG_GROUP_TRACKER_LL_CONFIG_FILE "ll-config-file"
 #define CONFIG_GROUP_TRACKER_LL_LIB_FILE "ll-lib-file"
 #define CONFIG_GROUP_TRACKER_ENABLE_BATCH_PROCESS "enable-batch-process"
+gint src_latency = 500;
+gboolean drop_on_latency = TRUE;
 
 gint g_num_sources = 0;
 gint g_source_id_list[MAX_NUM_SOURCES];
@@ -153,6 +155,20 @@ cb_newpad (GstElement * decodebin, GstPad * pad, gpointer data)
   }
 }
 
+static void
+cb_sourcesetup (GstElement * object, GstElement * arg0, gpointer data)
+{
+  gint source_id = (*(gint *) data);
+  if (g_object_class_find_property (G_OBJECT_GET_CLASS (arg0), "latency")) {
+    g_print ("source_id[%d] cb_sourcesetup set latency to %d\n", source_id, src_latency);
+    g_object_set (G_OBJECT (arg0), "latency", src_latency, NULL);
+  }
+  if (g_object_class_find_property (G_OBJECT_GET_CLASS (arg0), "drop-on-latency")) {
+    g_print ("source_id[%d] cb_sourcesetup set drop-on-latency to %d\n", source_id, drop_on_latency);
+    g_object_set (G_OBJECT (arg0), "drop-on-latency", drop_on_latency, NULL);
+  }
+}
+
 static GstElement *
 create_uridecode_bin (guint index, gchar * filename)
 {
@@ -168,6 +184,8 @@ create_uridecode_bin (guint index, gchar * filename)
       G_CALLBACK (cb_newpad), &g_source_id_list[index]);
   g_signal_connect (G_OBJECT (bin), "child-added",
       G_CALLBACK (decodebin_child_added), &g_source_id_list[index]);
+  g_signal_connect (G_OBJECT (bin), "source-setup",
+      G_CALLBACK (cb_sourcesetup), &g_source_id_list[index]);
   g_source_enabled[index] = TRUE;
 
   return bin;
